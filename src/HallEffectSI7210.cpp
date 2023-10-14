@@ -1,44 +1,53 @@
-#include "HallEffectSI7210.h"
+#include "HallEffectSi7210.h"
 
-void HallEffectSI7210::init(HallEffectSI7210::Devs dev) {
-    _dev = dev;
+bool HallEffectSi7210::init() {
+    bool rc;
+    int val;
     Wire.setSpeed(CLOCK_SPEED_100KHZ);
     Wire.begin();
     delay_us(100000);
-    waitForInit();
-    
-    writeRegister(0xC4, 0); // Clear stop values
-    writeRegister(0xC5, 1); // Enable auto increment
+
+    rc = readRegister(0xC0, val);
+    if (!rc || val != _CHIPID) {
+        _enabled = false;
+    } else {
+        if (!writeRegister(0xC4, 0) || !writeRegister(0xC5, 1)) // Clear stop values and enable auto increment
+            _enabled = false;
+        else
+            _enabled = true;
+    }
+
+    return _enabled;
 }
 
-void HallEffectSI7210::waitForInit() {
-    while (readRegister(0xC0) != _CHIPID)
-        delay_us(100000);
-}
-
-
-void HallEffectSI7210::writeRegister(int reg_addr, int value) {
+bool HallEffectSi7210::writeRegister(int reg_addr, int value) {
+    int numRetries = 3;
     int rc;
     do {
         delay_us(11);
-        Wire.beginTransmission(_dev);
+        Wire.beginTransmission(WireTransmission(_dev).timeout(100ms));
         Wire.write(reg_addr);
         Wire.write(value);
         rc = Wire.endTransmission();
-    } while(rc);
+    } while(rc && numRetries--);
+
+    return rc == 0;
 }
 
-void HallEffectSI7210::writeRegister(int reg_addr) {
+bool HallEffectSi7210::writeRegister(int reg_addr) {
+    int numRetries = 3;
     int rc;
     do {
         delay_us(11);
-        Wire.beginTransmission(_dev);
+        Wire.beginTransmission(WireTransmission(_dev).timeout(100ms));
         Wire.write(reg_addr);
         rc = Wire.endTransmission();
-    } while(rc);
+    } while(rc && numRetries--);
+
+    return rc == 0;
 }
 
-void HallEffectSI7210::delay_us(long us) {
+void HallEffectSi7210::delay_us(long us) {
     long target = micros() + us;
     while (target - (long)micros() >= 0) {
         yield();
@@ -46,21 +55,45 @@ void HallEffectSI7210::delay_us(long us) {
     }
 }
 
-int HallEffectSI7210::readRegister(int reg_addr) {
+bool HallEffectSi7210::readRegister(int reg_addr, int &value) {
+    long endTime = millis() + 500;
     do {
-        writeRegister(reg_addr);
-        Wire.requestFrom(_dev, 1);
-    } while(!Wire.available());
+        if (!writeRegister(reg_addr))
+            return false;
+        Wire.requestFrom(WireTransmission(_dev).quantity(1).timeout(100ms));
+    } while(!Wire.available() && (endTime - millis()) > 0);
 
-    return Wire.read();
+    if (endTime - millis() <= 0)
+        return false;
+
+    value = Wire.read();
+    return true;
 }
 
-int HallEffectSI7210::measure() {
-    writeRegister(0xc4, 0x4);
-    int msb = readRegister(0xc1);
+bool HallEffectSi7210::measure(int &val) {
+    int msb, lsb;
+    if (!_enabled && !init())
+        return false;
+
+    if (!writeRegister(0xc4, 0x4))
+        goto disable;
+
+    if (!readRegister(0xc1, msb))
+        goto disable;
+
     while (!(msb & 0x80)) {
         delay_us(100000);
-        msb = readRegister(0xc1);
+        if (!readRegister(0xc1, msb))
+            goto disable;
     }
-    return (((msb & 0x7f) << 8) | readRegister(0xc2)) - 16384;
+
+    if (!readRegister(0xc2, lsb))
+        goto disable;
+    val = (((msb & 0x7f) << 8) | lsb) - 16384;
+    return true;
+
+disable:
+    _enabled = false;
+    Wire.end();
+    return false;
 }
