@@ -23,6 +23,7 @@ class HallEffectSi7210 {
             , _dev(dev)
         {}
         bool measure(int &val);
+        bool isEnabled() { return _enabled; }
     
     private:
         bool init();
