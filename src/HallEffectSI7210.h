@@ -10,15 +10,15 @@
  * This was written using the https://www.silabs.com/documents/public/data-sheets/si7210-datasheet.pdf datasheet.
  * 
  */
-class HallEffectSi7210 {
+class HallEffectSI7210 {
     public:
         enum Devs : int {
-            Si7210_B_02_IV = 0x31,
-            Si7210_B_03_IV,
-            Si7210_B_04_IV,
-            Si7210_B_05_IV = 0x33,
+            SI7210_B_02_IV = 0x31,
+            SI7210_B_03_IV,
+            SI7210_B_04_IV,
+            SI7210_B_05_IV = 0x33,
         };
-        HallEffectSi7210(Devs dev)
+        HallEffectSI7210(Devs dev)
             : _enabled(false)
             , _dev(dev)
         {}

@@ -3,7 +3,7 @@
 HallEffectSI7210 hallEffect;
 
 void setup() {
-    hallEffect.init(HallEffectSI7210::Devs::Si7210_B_04_IV);
+    hallEffect.init(HallEffectSI7210::Devs::SI7210_B_04_IV);
 }
 
 void loop() {

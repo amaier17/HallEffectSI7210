@@ -1,6 +1,6 @@
-#include "HallEffectSi7210.h"
+#include "HallEffectSI7210.h"
 
-bool HallEffectSi7210::init() {
+bool HallEffectSI7210::init() {
     bool rc;
     int val;
     Wire.setSpeed(CLOCK_SPEED_100KHZ);
@@ -20,7 +20,7 @@ bool HallEffectSi7210::init() {
     return _enabled;
 }
 
-bool HallEffectSi7210::writeRegister(int reg_addr, int value) {
+bool HallEffectSI7210::writeRegister(int reg_addr, int value) {
     int numRetries = 3;
     int rc;
     do {
@@ -34,7 +34,7 @@ bool HallEffectSi7210::writeRegister(int reg_addr, int value) {
     return rc == 0;
 }
 
-bool HallEffectSi7210::writeRegister(int reg_addr) {
+bool HallEffectSI7210::writeRegister(int reg_addr) {
     int numRetries = 3;
     int rc;
     do {
@@ -47,7 +47,7 @@ bool HallEffectSi7210::writeRegister(int reg_addr) {
     return rc == 0;
 }
 
-void HallEffectSi7210::delay_us(long us) {
+void HallEffectSI7210::delay_us(long us) {
     long target = micros() + us;
     while (target - (long)micros() >= 0) {
         yield();
@@ -55,7 +55,7 @@ void HallEffectSi7210::delay_us(long us) {
     }
 }
 
-bool HallEffectSi7210::readRegister(int reg_addr, int &value) {
+bool HallEffectSI7210::readRegister(int reg_addr, int &value) {
     long endTime = millis() + 500;
     do {
         if (!writeRegister(reg_addr))
@@ -70,7 +70,7 @@ bool HallEffectSi7210::readRegister(int reg_addr, int &value) {
     return true;
 }
 
-bool HallEffectSi7210::measure(int &val) {
+bool HallEffectSI7210::measure(int &val) {
     int msb, lsb;
     if (!_enabled && !init())
         return false;
